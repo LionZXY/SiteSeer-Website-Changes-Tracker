@@ -11,7 +11,7 @@ const request = require('request')
 const { JSDOM } = jsdom;	
 const people = ['Akash']
 const admin = 475757469
-const token = '675292728:AAFuTt7B5vSC2cXnqEJfMk1xQjd8LEWQWFA';
+const token = process.env.BOT_TOKEN;
 
 const bot = new TelegramBot(token, {polling: true});
 
@@ -22,7 +22,7 @@ const checksum = (input) => {
 
 bot.sendMessage(admin,`Hello ${people} , the bot just re/started`)
 
-let sites = [{"url":"https://files.truecopy.in/viit/transcripthelp.html","chatId":[475757469],"checksumString":""},{"url":"http://results.unipune.ac.in","chatId":[475757469],"checksumString":""}];
+let sites = [{"url":"https://files.truecopy.in/viit/transcripthelp.html","chatId":['475757469'],"checksumString":""},{"url":"http://results.unipune.ac.in","chatId":['475757469'],"checksumString":""}];
 
 let siteList = ['https://files.truecopy.in/viit/transcripthelp.html','http://results.unipune.ac.in'];
 
@@ -36,6 +36,7 @@ bot.onText(/\/start/,(msg) =>{
 		/unsub {sitename} to unsubscribe from the site, without {}
 
 		Note : Doesn't work for dynamic sites like Instagram or Facebook.
+<<<<<<< HEAD
 	
 		Support me here :
 		http://m.p-y.tm/requestPayment?recipient=8669091448&amount=300&comment=SupportaCreator
@@ -43,6 +44,8 @@ bot.onText(/\/start/,(msg) =>{
 		OR
 
 		ko-fi.com/akashjoshi
+=======
+>>>>>>> 59dec69... Trying to make it work for dynamic pages
 
 		Your chatid is ${msg.chat.id}`)
 })
@@ -137,6 +140,7 @@ function batchWatch (){
 // Watch the site for changes...
 function siteWatcher(siteObject){
 	let userMessages = {
+<<<<<<< HEAD
 		"SITE_HAS_CHANGED": `The site, ${siteObject.url}, might have changed!
 
 		Support me here :
@@ -145,6 +149,9 @@ function siteWatcher(siteObject){
 		OR
 
 		ko-fi.com/akashjoshi`,
+=======
+        "SITE_HAS_CHANGED": `The site, ${siteObject.url}, might have changed!`,
+>>>>>>> 59dec69... Trying to make it work for dynamic pages
         "SITE_IS_DOWN": `The site, ${siteObject.url}, is down!`
 	}
 

@@ -1,4 +1,4 @@
 .DS_Store
-.env
+now.json
 node_modules/
 tests/
