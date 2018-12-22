@@ -11,7 +11,7 @@ const request = require('request')
 const { JSDOM } = jsdom;	
 const people = ['Akash']
 const admin = 475757469
-const token = process.env.TOKEN;
+const token = '675292728:AAFuTt7B5vSC2cXnqEJfMk1xQjd8LEWQWFA';
 
 const bot = new TelegramBot(token, {polling: true});
 
@@ -36,6 +36,13 @@ bot.onText(/\/start/,(msg) =>{
 		/unsub {sitename} to unsubscribe from the site, without {}
 
 		Note : Doesn't work for dynamic sites like Instagram or Facebook.
+	
+		Support me here :
+		http://m.p-y.tm/requestPayment?recipient=8669091448&amount=300&comment=SupportaCreator
+
+		OR
+
+		ko-fi.com/akashjoshi
 
 		Your chatid is ${msg.chat.id}`)
 })
@@ -130,7 +137,14 @@ function batchWatch (){
 // Watch the site for changes...
 function siteWatcher(siteObject){
 	let userMessages = {
-        "SITE_HAS_CHANGED": `The site, ${siteObject.url}, might have changed!`,
+		"SITE_HAS_CHANGED": `The site, ${siteObject.url}, might have changed!
+
+		Support me here :
+		http://m.p-y.tm/requestPayment?recipient=8669091448&amount=300&comment=SupportaCreator
+
+		OR
+
+		ko-fi.com/akashjoshi`,
         "SITE_IS_DOWN": `The site, ${siteObject.url}, is down!`
 	}
 
