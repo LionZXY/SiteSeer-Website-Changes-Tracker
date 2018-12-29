@@ -11,7 +11,7 @@ const request = require('request')
 const { JSDOM } = jsdom;	
 const people = ['Akash']
 const admin = 475757469
-const token = process.env.BOT_TOKEN;
+const token = process.env.BOT_TOKEN
 
 const bot = new TelegramBot(token, {polling: true});
 
@@ -133,7 +133,7 @@ function siteWatcher(siteObject){
 		"SITE_HAS_CHANGED": `The site, ${siteObject.url}, might have changed!
 
 		Support me here :
-		http://m.p-y.tm/requestPayment?recipient=8669091448&amount=300&comment=SupportaCreator
+		http://m.p-y.tm/requestPayment?recipient=8669091448
 
 		OR
 
