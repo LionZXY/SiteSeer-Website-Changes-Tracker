@@ -2,7 +2,7 @@ require('dotenv').config();
 const Telegraf = require('telegraf');
 const request = require('request');
 const { CronJob } = require('cron');
-const { pbkdf2Sync } = require('crypto');
+const { createHash } = require('crypto');
 const { JSDOM } = require('jsdom');
 const mongoose = require('mongoose');
 
@@ -17,8 +17,8 @@ const admin = process.env.ADMIN
 const token = process.env.BOT_TOKEN;
 
 //Function to calculate checksum using crypto
-const checksum = (input) =>
-	pbkdf2Sync(input, 'salt', 1, 64, 'sha512').toString('hex');
+const checksum = input =>
+	createHash('md5').update(input).digest('hex')
 
 mongoose.set('useCreateIndex', true);
 mongoose.set('useFindAndModify', false);
@@ -91,7 +91,7 @@ bot.command('list', ({ chat: { id }, reply }) =>
 	ensureChatExists(id).populate('sites')
 		.then(({ sites }) =>
 			reply('Sites currently being checked by bot are \n' +
-				sites.map(x => x.url).join('\n') +
+				sites.map(x => x.url).join('\n\n') +
 				'\n\nUse /watch sitename " to subscribe to notifs of that site' +
 				'\n\nUse /unsub sitename to unsubscribe')));
 
