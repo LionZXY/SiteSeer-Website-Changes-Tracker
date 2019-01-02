@@ -3,7 +3,6 @@ const axios = require('axios');
 const { createHash } = require('crypto');
 const { JSDOM } = require('jsdom');
 const mongoose = require('mongoose');
-const request = require('request');
 const Telegraf = require('telegraf');
 
 const { env } = process;
@@ -15,8 +14,8 @@ const updateInterval = env.UPDATE_INTERVAL || 900;
 const maxAge = env.MAX_AGE || 900;
 const mongoURL = env.MONGO_URI || 'mongodb://localhost:27017/SiteSeer';
 const token = env.BOT_TOKEN;
-const debug = Boolean(env.DEBUG);
-const ads = Boolean(env.ADS);
+const debug = Boolean(env.DEBUG) || true;
+const ads = Boolean(env.ADS) || true;
 
 if (!token) {
 	throw new Error('Missing BOT_TOKEN env var');
@@ -24,8 +23,11 @@ if (!token) {
 
 
 //Function to calculate checksum using crypto
-const checksum = input =>
-	createHash('md5').update(input).digest('hex')
+const checksum = input => {
+	const dom = new JSDOM(input)
+	const inp1 = dom.window.document.querySelector('body').textContent.trim()
+	return createHash('md5').update(inp1).digest('hex')
+}
 
 mongoose.set('useCreateIndex', true);
 mongoose.set('useFindAndModify', false);
@@ -71,7 +73,7 @@ const ensureExists = (url, id, populate = false) =>
 	]);
 
 const urlFromMessage = text => {
-	const arg = text.split(' ').slice(1).join(' ').trim();
+	const arg = text.split(' ').slice(1).join('');
 	return (/^http(s)?:\/\//).test(arg) ? arg : `http://${arg}`;
 };
 
