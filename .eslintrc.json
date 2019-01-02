@@ -142,7 +142,7 @@
         "no-loop-func": "error",
         "no-magic-numbers": "off",
         "no-mixed-operators": "error",
-        "no-mixed-requires": "error",
+        "no-mixed-requires": "off",
         "no-multi-assign": "error",
         "no-multi-spaces": "off",
         "no-multi-str": "error",

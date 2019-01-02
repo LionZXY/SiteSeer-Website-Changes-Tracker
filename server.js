@@ -1,19 +1,20 @@
 //require('dotenv').config()
-const app = require('express')();
-const http = require('http').Server(app);
-const TelegramBot = require('node-telegram-bot-api');
-const request = require('request')
+const app = require('express')()
+	, http = require('http').Server(app)
+	,TelegramBot = require('node-telegram-bot-api')
+	, request = require('request')
 	,	cronJob = require('cron').CronJob
     , crypto = require('crypto')
     , jsdom = require('jsdom')
-    //, url = require('url')
 
 const {JSDOM} = jsdom;	
 const people = ['Akash']
 const admin = 475757469
 const token = process.env.BOT_TOKEN
-
+const mongoose = require('mongoose')
 const bot = new TelegramBot(token, {polling: true});
+const query = {"_id": "5c2c4461e7179a49f40abe2d"};
+mongoose.connect(process.env.MONGO_URI)
 
 //Function to calculate checksum using crypto
 const checksum = (input) => {
@@ -22,15 +23,18 @@ const checksum = (input) => {
 
 bot.sendMessage(admin,`Hello ${people} , the bot just re/started`)
 
-let sites = [
-	{"url":"https://files.truecopy.in/viit/transcripthelp.html","chatId":['475757469'],"checksumString":""},
-{"url":"http://results.unipune.ac.in","chatId":['475757469'],"checksumString":""}
-];
+const {Schema} = mongoose
+var myModel = mongoose.model('sites', new Schema({sites: Array}), 
+'sites');
 
-let siteList = [
-	'https://files.truecopy.in/viit/transcripthelp.html',
-'http://results.unipune.ac.in'
-];
+let sites = []
+let siteList = []
+
+myModel.find({}, function(err, data) {
+	sites=data[0].sites
+	siteList = sites.map(element=>element.url)
+	console.log(err)
+})
 
 bot.onText(/\/start/,(msg) =>{
     bot.sendMessage(msg.chat.id,
@@ -57,37 +61,21 @@ app.get('/s', (req,res) =>{
 // Matches "/echo [whatever]"
 bot.onText(/\/watch (.+)/, (msg, match) => {
   // 'msg' is the received Message from Telegram 'match' is the result of executing the regexp above on the text content of the message
-    const chatId = msg.chat.id;
+	const chatId = msg.chat.id;
+	let chatarr = [] 
+	chatarr.push(chatId)
 	let url = match[1].toLowerCase()  
     url = (/^http(s)?:\/\//).test(url) ? url : `http://${url}`;
     if(siteList.indexOf(url) == -1){
 		siteList.push(url);
-		sites.push({url:url,chatId:chatId,checksumString:""})
+		sites.push({url,chatId:chatarr,checksumString:""})
+		bot.sendMessage(msg.chat.id,`Checking ${url} for you !`)
 	}
-		
-	sites.forEach((element)=>{
-		if(element.url == url){
-			let flag = true;
-			Promise.all(element.chatId.map((element1)=>{
-				if(element1 == msg.chat.id){
-				bot.sendMessage(msg.chat.id,`Already subscribed`)
-				flag = false
-				return true
-			}
-				return false;
-			}))
-			if(flag){
-				element.chatId.push(msg.chat.id)
-				bot.sendMessage(msg.chat.id,`Checking ${url} for you !`)
-				return true;
-			}
-			else return true;
-		}
-	})
+	else bot.sendMessage(msg.chat.id,`Already subscribed`)
 });
 
 bot.onText(/\/list/,(msg)=>{
-	let temp = 'Sites currently being checked are \n'
+	let temp = 'Sites currently being checked by bot are \n'
 
 	siteList.forEach((element)=>{
 		temp += `\n ${element} \n`;
@@ -133,6 +121,14 @@ function batchWatch (){
 	Promise.all(sites.map((element)=>{
 		siteWatcher(element)
 	}))
+	const newData = {
+		'sites' : sites,
+		"_id": "5c2c4461e7179a49f40abe2d"
+	}
+	myModel.findOneAndUpdate(query, newData, {upsert:true}, function(err){
+		if (err) return console.log(500, { error: err });
+		return console.log("succesfully saved");
+	});
 }
 
 // Watch the site for changes...
@@ -183,8 +179,6 @@ function siteWatcher(siteObject){
 					
 					// Update checkSumString's value
 					siteObject.checksumString = currentCheckSum
-
-					console.log(siteObject);
 
 					Promise.all(siteObject.chatId.map((element1)=>bot.sendMessage(element1,userMessages.SITE_HAS_CHANGED)
 					))

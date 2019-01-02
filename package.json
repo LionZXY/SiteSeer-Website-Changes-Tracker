@@ -7,6 +7,7 @@
     "dotenv": "^1.2.0",
     "express": "latest",
     "jsdom": "^13.0.0",
+    "mongoose": "^5.4.1",
     "node-telegram-bot-api": "latest",
     "request": "^2.88.0"
   }
