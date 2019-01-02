@@ -8,7 +8,7 @@ const request = require('request')
     , jsdom = require('jsdom')
     //, url = require('url')
 
-const { JSDOM } = jsdom;	
+const {JSDOM} = jsdom;	
 const people = ['Akash']
 const admin = 475757469
 const token = process.env.BOT_TOKEN
@@ -22,9 +22,15 @@ const checksum = (input) => {
 
 bot.sendMessage(admin,`Hello ${people} , the bot just re/started`)
 
-let sites = [{"url":"https://files.truecopy.in/viit/transcripthelp.html","chatId":['475757469'],"checksumString":""},{"url":"http://results.unipune.ac.in","chatId":['475757469'],"checksumString":""}];
+let sites = [
+	{"url":"https://files.truecopy.in/viit/transcripthelp.html","chatId":['475757469'],"checksumString":""},
+{"url":"http://results.unipune.ac.in","chatId":['475757469'],"checksumString":""}
+];
 
-let siteList = ['https://files.truecopy.in/viit/transcripthelp.html','http://results.unipune.ac.in'];
+let siteList = [
+	'https://files.truecopy.in/viit/transcripthelp.html',
+'http://results.unipune.ac.in'
+];
 
 bot.onText(/\/start/,(msg) =>{
     bot.sendMessage(msg.chat.id,
@@ -53,7 +59,7 @@ bot.onText(/\/watch (.+)/, (msg, match) => {
   // 'msg' is the received Message from Telegram 'match' is the result of executing the regexp above on the text content of the message
     const chatId = msg.chat.id;
 	let url = match[1].toLowerCase()  
-    url = /^http(s)?:\/\//.test(url) ? url : `http://${url}`;
+    url = (/^http(s)?:\/\//).test(url) ? url : `http://${url}`;
     if(siteList.indexOf(url) == -1){
 		siteList.push(url);
 		sites.push({url:url,chatId:chatId,checksumString:""})
@@ -62,13 +68,14 @@ bot.onText(/\/watch (.+)/, (msg, match) => {
 	sites.forEach((element)=>{
 		if(element.url == url){
 			let flag = true;
-			element.chatId.forEach((element)=>{
-				if(element == msg.chat.id){
-					bot.sendMessage(msg.chat.id,`Already subscribed`)
-					flag = false
-					return true
-				}
-			})
+			Promise.all(element.chatId.map((element1)=>{
+				if(element1 == msg.chat.id){
+				bot.sendMessage(msg.chat.id,`Already subscribed`)
+				flag = false
+				return true
+			}
+				return false;
+			}))
 			if(flag){
 				element.chatId.push(msg.chat.id)
 				bot.sendMessage(msg.chat.id,`Checking ${url} for you !`)
@@ -83,7 +90,7 @@ bot.onText(/\/list/,(msg)=>{
 	let temp = 'Sites currently being checked are \n'
 
 	siteList.forEach((element)=>{
-		temp += ('\n'+ element+'\n');
+		temp += `\n ${element} \n`;
 	})
 
 	temp += `\n\nUse /watch sitename " to subscribe to notifs of that site\n\nUse /unsub sitename to unsubscribe`;
@@ -92,8 +99,8 @@ bot.onText(/\/list/,(msg)=>{
 })
 
 bot.onText(/\/unsub (.+)/,(msg,match)=>{
-	if(siteList.indexOf(match[1])!=-1){
-		sites.forEach((element)=>{
+	if(siteList.indexOf(match[1]) != -1){
+		Promise.all(sites.map((element)=>{
 			if(element.url == match[1]){
 				element.chatId = element.chatId.filter((value)=>{
 					return value != msg.chat.id;
@@ -101,7 +108,8 @@ bot.onText(/\/unsub (.+)/,(msg,match)=>{
 				bot.sendMessage(msg.chat.id,`If you were subscribed to ${match[1]}, you no longer are`)
 				return true;
 			}
-		})
+			return false
+		}))
 	}
 	else bot.sendMessage(msg.chat.id,`${match[1]} isn't a valid site. Please check /list for available websites`)
 })
@@ -122,9 +130,9 @@ var job = new cronJob('*/15 * * * *', batchWatch//()=>{console.log(1)}
 );
 
 function batchWatch (){
-	sites.forEach(function(element){
+	Promise.all(sites.map((element)=>{
 		siteWatcher(element)
-	})
+	}))
 }
 
 // Watch the site for changes...
@@ -142,7 +150,7 @@ function siteWatcher(siteObject){
 	}
 
 	// Check to see if there is a seed checksum
-	if(!siteObject.hasOwnProperty('checksumString')){
+	if(siteObject.checksumString == ''){
 
 		// Create the first checksum and return
 		return request(siteObject.url, function initialRequestCallback(error, response, body){
@@ -154,9 +162,8 @@ function siteWatcher(siteObject){
 				return siteObject.checksumString = checksum(dom.window.document.querySelector('body').textContent.trim())
             } 
             else{
-				siteObject.chatId.forEach((element)=>{
-					bot.sendMessage(element,userMessages.SITE_IS_DOWN);
-				})
+				Promise.all(siteObject.chatId.map((element1)=>bot.sendMessage(element1,userMessages.SITE_IS_DOWN)
+				))
 			} 
 		}) // end request
 	}
@@ -177,16 +184,16 @@ function siteWatcher(siteObject){
 					// Update checkSumString's value
 					siteObject.checksumString = currentCheckSum
 
-					siteObject.chatId.forEach((element)=>{
-						bot.sendMessage(element,userMessages.SITE_HAS_CHANGED);
-					})
+					console.log(siteObject);
+
+					Promise.all(siteObject.chatId.map((element1)=>bot.sendMessage(element1,userMessages.SITE_HAS_CHANGED)
+					))
 				}
 				// else site still same
             }
             else  {
-				siteObject.chatId.forEach((element)=>{
-					bot.sendMessage(element,userMessages.SITE_IS_DOWN);
-				})
+				Promise.all(siteObject.chatId.map((element1)=>bot.sendMessage(element1,userMessages.SITE_IS_DOWN)
+				))
 			} 
 		})
 	} 
