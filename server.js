@@ -1,116 +1,117 @@
-//require('dotenv').config()
-const app = require('express')()
-	, http = require('http').Server(app)
-	,TelegramBot = require('node-telegram-bot-api')
-	, request = require('request')
-	,	cronJob = require('cron').CronJob
-    , crypto = require('crypto')
-    , jsdom = require('jsdom')
+require('dotenv').config();
+const Telegraf = require('telegraf');
+const request = require('request');
+const { CronJob } = require('cron');
+const { pbkdf2Sync } = require('crypto');
+const { JSDOM } = require('jsdom');
+const mongoose = require('mongoose');
 
-const {JSDOM} = jsdom;	
-const people = ['Akash']
-const admin = 475757469
-const token = process.env.BOT_TOKEN
-const mongoose = require('mongoose')
-const bot = new TelegramBot(token, {polling: true});
-const query = {"_id": "5c2c4461e7179a49f40abe2d"};
-mongoose.connect(process.env.MONGO_URI)
+const { Schema, model } = mongoose;
+
+const people = process.env.PEOPLE
+	? process.env.PEOPLE.split(',')
+	: [ 'Akash' ];
+const admin = process.env.ADMIN
+	? Number(process.env.ADMIN)
+	: 475757469;
+const token = process.env.BOT_TOKEN;
 
 //Function to calculate checksum using crypto
-const checksum = (input) => {
-	return crypto.pbkdf2Sync(input, 'salt', 1, 64, 'sha512').toString('hex')
-}
+const checksum = (input) =>
+	pbkdf2Sync(input, 'salt', 1, 64, 'sha512').toString('hex');
 
-bot.sendMessage(admin,`Hello ${people} , the bot just re/started`)
+mongoose.set('useCreateIndex', true);
+mongoose.set('useFindAndModify', false);
+mongoose.connect(process.env.MONGO_URI, { useNewUrlParser: true });
 
-const {Schema} = mongoose
-var myModel = mongoose.model('sites', new Schema({sites: Array}), 
-'sites');
+const SiteSchema = new Schema({
+	url: { type: String, required: true, unique: true },
+	checksum: { type: String }
+});
+const Site = model('Site', SiteSchema);
 
-let sites = []
-let siteList = []
-
-myModel.find({}, function(err, data) {
-	sites=data[0].sites
-	siteList = sites.map(element=>element.url)
-	console.log(err)
-})
-
-bot.onText(/\/start/,(msg) =>{
-    bot.sendMessage(msg.chat.id,
-		`Welcome to SiteSeer !
-		Made by www.linkedin.com/in/akash-s-joshi 👻. 
-
-		/list to list websites
-		/watch {sitename} to watch a site, without {}
-		/unsub {sitename} to unsubscribe from the site, without {}
-
-		Note : Doesn't work for dynamic sites like Instagram or Facebook.
-		
-		Your chatid is ${msg.chat.id}`)
-})
-
-app.get('/', (req,res) => {
-	res.send(sites);
+const ChatSchema = new Schema({
+	id: { type: Number, required: true, unique: true },
+	sites: {
+		type: [ { type: Schema.Types.ObjectId, ref: 'Site' } ],
+		required: true,
+		default: [],
+		validate: x => x.length <= 100
+	}
 });
 
-app.get('/s', (req,res) =>{
-	res.send(siteList)
-})
+const Chat = model('Chat', ChatSchema);
+
+const ensureSiteExists = url =>
+	Site.findOneAndUpdate(
+		{ url },
+		{ $set: { url } },
+		{ upsert: true, new: true });
+
+const ensureChatExists = id =>
+	Chat.findOneAndUpdate(
+		{ id },
+		{ $set: { id } },
+		{ upsert: true, new: true });
+
+const bot = new Telegraf(token);
+
+bot.command('start', ctx => ctx.reply(`Welcome to SiteSeer !
+Made by www.linkedin.com/in/akash-s-joshi 👻. 
+
+/list to list websites
+/watch {sitename} to watch a site, without {}
+/unsub {sitename} to unsubscribe from the site, without {}
+
+Note : Doesn't work for dynamic sites like Instagram or Facebook.
+
+Your chatid is ${ctx.chat.id}`));
 
 // Matches "/echo [whatever]"
-bot.onText(/\/watch (.+)/, (msg, match) => {
-  // 'msg' is the received Message from Telegram 'match' is the result of executing the regexp above on the text content of the message
-	const chatId = msg.chat.id;
-	let chatarr = [] 
-	chatarr.push(chatId)
-	let url = match[1].toLowerCase()  
-    url = (/^http(s)?:\/\//).test(url) ? url : `http://${url}`;
-    if(siteList.indexOf(url) == -1){
-		siteList.push(url);
-		sites.push({url,chatId:chatarr,checksumString:""})
-		bot.sendMessage(msg.chat.id,`Checking ${url} for you !`)
-	}
-	else bot.sendMessage(msg.chat.id,`Already subscribed`)
+bot.command('watch', ({ chat: { id }, message, reply }) => {
+	const arg = message.text.split(' ').slice(1).join(' ').trim();
+	const url = (/^http(s)?:\/\//).test(arg) ? arg : `http://${arg}`;
+	return Promise.all([
+		ensureSiteExists(url),
+		ensureChatExists(id)
+	])
+		.then(([ site, chat ]) =>
+			[ site, chat, chat.sites.some(x => x.equals(site.id)) ])
+		.then(([ site, chat, chatHasSite ]) =>
+			chatHasSite
+				? reply('Already subscribed')
+				: chat.updateOne(
+					{ $push: { sites: site.id } },
+					{ new: true })
+					.then(() =>
+						reply(`Checking ${url} for you!`)));
 });
 
-bot.onText(/\/list/,(msg)=>{
-	let temp = 'Sites currently being checked by bot are \n'
+bot.command('list', ({ chat: { id }, reply }) =>
+	ensureChatExists(id).populate('sites')
+		.then(({ sites }) =>
+			reply('Sites currently being checked by bot are \n' +
+				sites.map(x => x.url).join('\n') +
+				'\n\nUse /watch sitename " to subscribe to notifs of that site' +
+				'\n\nUse /unsub sitename to unsubscribe')));
 
-	siteList.forEach((element)=>{
-		temp += `\n ${element} \n`;
-	})
-
-	temp += `\n\nUse /watch sitename " to subscribe to notifs of that site\n\nUse /unsub sitename to unsubscribe`;
-
-	bot.sendMessage(msg.chat.id,temp)
-})
-
-bot.onText(/\/unsub (.+)/,(msg,match)=>{
+bot.command('unsub', (msg, match) => {
 	if(siteList.indexOf(match[1]) != -1){
 		Promise.all(sites.map((element)=>{
 			if(element.url == match[1]){
 				element.chatId = element.chatId.filter((value)=>{
 					return value != msg.chat.id;
 				})
-				bot.sendMessage(msg.chat.id,`If you were subscribed to ${match[1]}, you no longer are`)
+				bot.telegram.sendMessage(msg.chat.id,`If you were subscribed to ${match[1]}, you no longer are`)
 				return true;
 			}
 			return false
 		}))
 	}
-	else bot.sendMessage(msg.chat.id,`${match[1]} isn't a valid site. Please check /list for available websites`)
+	else bot.telegram.sendMessage(msg.chat.id,`${match[1]} isn't a valid site. Please check /list for available websites`)
 })
 
-bot.on ('polling_error', (error) => {
-    var time = new Date();
-	console.log("TIME:", time);
-	console.log("CODE:", error.code);  // => 'EFATAL'
-	console.log("MSG:", error.message);
-	console.log("STACK:", error.stack);
- });
-
-var job = new cronJob('*/15 * * * *', batchWatch//()=>{console.log(1)}
+var job = new CronJob('*/15 * * * *', batchWatch//()=>{console.log(1)}
 , function endCronJob(){
     console.log('cronJob ended')
   },true,
@@ -158,7 +159,7 @@ function siteWatcher(siteObject){
 				return siteObject.checksumString = checksum(dom.window.document.querySelector('body').textContent.trim())
             } 
             else{
-				Promise.all(siteObject.chatId.map((element1)=>bot.sendMessage(element1,userMessages.SITE_IS_DOWN)
+				Promise.all(siteObject.chatId.map((element1)=>bot.telegram.sendMessage(element1,userMessages.SITE_IS_DOWN)
 				))
 			} 
 		}) // end request
@@ -180,21 +181,23 @@ function siteWatcher(siteObject){
 					// Update checkSumString's value
 					siteObject.checksumString = currentCheckSum
 
-					Promise.all(siteObject.chatId.map((element1)=>bot.sendMessage(element1,userMessages.SITE_HAS_CHANGED)
+					Promise.all(siteObject.chatId.map((element1)=>bot.telegram.sendMessage(element1,userMessages.SITE_HAS_CHANGED)
 					))
 				}
 				// else site still same
             }
             else  {
-				Promise.all(siteObject.chatId.map((element1)=>bot.sendMessage(element1,userMessages.SITE_IS_DOWN)
+				Promise.all(siteObject.chatId.map((element1)=>bot.telegram.sendMessage(element1,userMessages.SITE_IS_DOWN)
 				))
 			} 
 		})
 	} 
-} 
+}
 
-var port = process.env.PORT || 8080;
+bot.catch(console.error);
 
-http.listen(port, () => {
-	console.log(`working on port ${port}`);
-});
+bot.telegram.sendMessage(
+	admin,
+	`Hello ${people.join(', ')}, the bot just restarted`)
+	.then(() =>
+		bot.startPolling());
