@@ -1,12 +1,11 @@
 //require('dotenv').config()
 const app = require('express')()
-	, http = require('http').Server(app)
-	,TelegramBot = require('node-telegram-bot-api')
-	, request = require('request')
-	,	cronJob = require('cron').CronJob
-    , crypto = require('crypto')
-    , jsdom = require('jsdom')
-
+const http = require('http').Server(app)
+const TelegramBot = require('node-telegram-bot-api')
+const request = require('request')
+const	cronJob = require('cron').CronJob
+const crypto = require('crypto')
+const jsdom = require('jsdom')
 const {JSDOM} = jsdom;	
 const people = ['Akash']
 const admin = 475757469
@@ -18,7 +17,7 @@ mongoose.connect(process.env.MONGO_URI)
 
 //Function to calculate checksum using crypto
 const checksum = (input) => {
-	return crypto.pbkdf2Sync(input, 'salt', 1, 64, 'sha512').toString('hex')
+	return crypto.createHash('md5').update(input).digest('hex')
 }
 
 bot.sendMessage(admin,`Hello ${people} , the bot just re/started`)
@@ -75,13 +74,7 @@ bot.onText(/\/watch (.+)/, (msg, match) => {
 });
 
 bot.onText(/\/list/,(msg)=>{
-	let temp = 'Sites currently being checked by bot are \n'
-
-	siteList.forEach((element)=>{
-		temp += `\n ${element} \n`;
-	})
-
-	temp += `\n\nUse /watch sitename " to subscribe to notifs of that site\n\nUse /unsub sitename to unsubscribe`;
+	let temp = `Sites currently being checked by bot are \n ${siteList.join("\n\n")} \n\nUse /watch sitename to subscribe to notifs of that site\n\nUse /unsub sitename to unsubscribe`;
 
 	bot.sendMessage(msg.chat.id,temp)
 })
