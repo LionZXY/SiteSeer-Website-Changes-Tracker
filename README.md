@@ -32,3 +32,4 @@ My bot to track changes in websites. Deployed at t.me/siteseer_bot .
 - [ ] Compare a screenshot of the website instead of complete HTML
 - [ ] Use JSSoup instead ?
 - [ ] Send image with change notification, so user doesn't have to open site
+- [ ] Split code into multiple files, abstract mongo, telegram
