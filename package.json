@@ -5,7 +5,6 @@
   "description": "Send SMS notifications on site change via SHA1 checksum",
   "dependencies": {
     "axios": "^0.18.0",
-    "cron": "^1.6.0",
     "dotenv": "^6.2.0",
     "express": "^4.16.4",
     "jsdom": "^13.1.0",
