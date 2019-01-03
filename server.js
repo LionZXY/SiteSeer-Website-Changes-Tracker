@@ -78,8 +78,8 @@ const urlFromMessage = text => {
 };
 
 const messageAll = async (site_id, message) => {
-	for await (const chat of Chat.find({ sites: site_id })) {
-		await bot.telegram.sendMessage(chat.id, message);
+	for  (const chat of Chat.find({ sites: site_id })) {
+		 bot.telegram.sendMessage(chat.id, message);
 	}
 };
 
@@ -112,10 +112,11 @@ const checkSite = site =>
 			]));
 
 const batchWatch = async () => {
-	for await (const site of Site.find({
+	const allSites = await Site.find({
 		checked: { $lte: Date.now() - (maxAge * 1000) }
-	})) {
-		await checkSite(site);
+	})
+	for  (const site of allSites) {
+		 checkSite(site);
 	}
 };
 
@@ -182,4 +183,9 @@ bot.telegram.sendMessage(
 	admin,
 	`Hello ${people.join(', ')}, the bot just restarted`)
 	.then(() =>
-		bot.startPolling());
+	bot.startPolling());
+
+require('http').createServer(function (req, res) {
+	res.write('Hello World!'); //write a response to the client
+	res.end(); //end the response
+	}).listen(8080); 
