@@ -78,9 +78,13 @@ const urlFromMessage = text => {
 };
 
 const messageAll = async (site_id, message) => {
-	for  (const chat of Chat.find({ sites: site_id })) {
-		 bot.telegram.sendMessage(chat.id, message);
-	}
+	Chat.find({ sites: site_id },(err,data)=>{
+		//console.log(util.inspect(data));
+		const allChats=data;
+		Promise.all(allChats.map(chat=>{
+			bot.telegram.sendMessage(chat.id, message);
+		}))
+	})
 };
 
 const siteWatcher = url =>
