@@ -145,7 +145,7 @@ Your chatid is ${ctx.chat.id}`));
 // Matches "/echo [whatever]"
 bot.command('watch', ({ chat: { id }, message: { text }, reply }) => {
 	if(!urlFromMessage(text))
-		return reply(`Please provide an URL to watch.`)
+		return reply(`Please provide a URL to watch.`)
 	ensureExists(urlFromMessage(text), id)
 		.then(([ site, chat ]) =>
 			[ site, chat, chat.sites.some(x => x.equals(site.id)) ])
@@ -171,7 +171,7 @@ bot.command('list', ({ chat: { id }, reply }) =>
 bot.command('unsub', ({ chat: { id }, message: { text }, reply }) => {
 	const url = urlFromMessage(text);
 	if(!url)
-		return reply(`Please provide an URL to unsubscribe`);
+		return reply(`Please provide a URL to unsubscribe`);
 	return ensureExists(url, id, true)
 		.then(([ site, chat ]) =>
 			[ site, chat, chat.sites.find(x => x.url === site.url) ])
