@@ -72,10 +72,15 @@ const ensureExists = (url, id, populate = false) =>
 			: ensureChatExists(id)
 	]);
 
+//returns null if no url provided with /watch or /unsub
 const urlFromMessage = text => {
 	const arg = text.split(' ').slice(1).join('');
-	return (/^http(s)?:\/\//).test(arg) ? arg : `http://${arg}`;
-};
+	return !arg.length 
+		? null 
+		: (/^http(s)?:\/\//).test(arg) 
+			? arg 
+			: `http://${arg}`
+}
 
 const messageAll = async (site_id, message) => {
 	Chat.find({ sites: site_id },(err,data)=>{
@@ -138,7 +143,9 @@ Note : Doesn't work for dynamic sites like Instagram or Facebook.
 Your chatid is ${ctx.chat.id}`));
 
 // Matches "/echo [whatever]"
-bot.command('watch', ({ chat: { id }, message: { text }, reply }) =>
+bot.command('watch', ({ chat: { id }, message: { text }, reply }) => {
+	if(!urlFromMessage(text))
+		return reply(`Please provide an URL to watch.`)
 	ensureExists(urlFromMessage(text), id)
 		.then(([ site, chat ]) =>
 			[ site, chat, chat.sites.some(x => x.equals(site.id)) ])
@@ -150,7 +157,8 @@ bot.command('watch', ({ chat: { id }, message: { text }, reply }) =>
 					{ new: true })
 					.then(() =>
 						reply(`Checking ${site.url} for you!`))
-					.then(() => checkSite(site))));
+					.then(() => checkSite(site)));
+})
 
 bot.command('list', ({ chat: { id }, reply }) =>
 	ensureChatExists(id).populate('sites')
@@ -162,6 +170,8 @@ bot.command('list', ({ chat: { id }, reply }) =>
 
 bot.command('unsub', ({ chat: { id }, message: { text }, reply }) => {
 	const url = urlFromMessage(text);
+	if(!url)
+		return reply(`Please provide an URL to unsubscribe`);
 	return ensureExists(url, id, true)
 		.then(([ site, chat ]) =>
 			[ site, chat, chat.sites.find(x => x.url === site.url) ])
