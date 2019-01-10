@@ -102,6 +102,7 @@ const siteWatcher = url =>
 const checkSite = site =>
 	siteWatcher(site.url)
 		.then(checksum =>
+			site.checksum == checksum ? null :
 			Promise.all([
 				site.updateOne({ $set: { checksum, checked: Date.now() } }),
 				messageAll(site._id, [
