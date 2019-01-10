@@ -1,7 +1,7 @@
 require('dotenv').config();
 const axios = require('axios');
 const { createHash } = require('crypto');
-const { JSDOM } = require('jsdom');
+const JSSoup  = require('jssoup').default
 const mongoose = require('mongoose');
 const Telegraf = require('telegraf');
 
@@ -24,9 +24,11 @@ if (!token) {
 
 //Function to calculate checksum using crypto
 const checksum = input => {
-	const dom = new JSDOM(input)
-	const inp1 = dom.window.document.querySelector('body').textContent.trim()
-	return createHash('md5').update(inp1).digest('hex')
+	const soup = new JSSoup (input)
+	const text = soup.findAll('div')
+						.map(div=>div.text)
+							.join()
+	return createHash('md5').update(text).digest('hex')
 }
 
 mongoose.set('useCreateIndex', true);
