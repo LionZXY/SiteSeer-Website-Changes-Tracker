@@ -4,18 +4,21 @@ const { createHash } = require('crypto');
 const JSSoup  = require('jssoup').default
 const mongoose = require('mongoose');
 const Telegraf = require('telegraf');
-
+const rateLimit = require('telegraf-ratelimit')
 const { env } = process;
-const { Schema, model, Types: { ObjectId } } = mongoose;
+const { Schema, model} = mongoose;
 
 const people = env.PEOPLE ? env.PEOPLE.split(',') : [ 'Akash' ];
 const admin = env.ADMIN ? Number(env.ADMIN) : 475757469;
-const updateInterval = env.UPDATE_INTERVAL || 900;
-const maxAge = env.MAX_AGE || 900;
+const updateInterval = env.UPDATE_INTERVAL || 1800;
 const mongoURL = env.MONGO_URI || 'mongodb://localhost:27017/SiteSeer';
 const token = env.BOT_TOKEN;
-const debug = Boolean(env.DEBUG) || true;
 const ads = Boolean(env.ADS) || true;
+
+const limitConfig = {
+	window: 3000,
+	limit: 1
+}
 
 if (!token) {
 	throw new Error('Missing BOT_TOKEN env var');
@@ -86,27 +89,38 @@ const urlFromMessage = text => {
 
 const messageAll = async (site_id, message) => {
 	Chat.find({ sites: site_id },(err,data)=>{
-		//console.log(util.inspect(data));
 		const allChats=data;
+		if(allChats===[]){
+			Site.deleteOne({id:site_id})
+			return
+		}
 		Promise.all(allChats.map(chat=>{
 			bot.telegram.sendMessage(chat.id, message);
 		}))
 	})
 };
 
-const siteWatcher = url =>
-	axios(url)
+const siteWatcher = site =>
+	axios(site.url)
 		.then(res => res.data)
-		.then(checksum);
+		.then(checksum)
+		.catch(err=>{
+			console.log(site.url);
+			Promise.all([
+			site.updateOne({ $set: { checked: Date.now() } }),
+			messageAll(site._id, `The site, ${site.url}, is down or is blocking the bot's connection.\nUse \\start to review commands` + err.message)
+			]
+		)
+	})
 
 const checkSite = site =>
-	siteWatcher(site.url)
+	siteWatcher(site)
 		.then(checksum =>
-			site.checksum == checksum ? null :
+			{if(site.checksum != checksum)
 			Promise.all([
 				site.updateOne({ $set: { checksum, checked: Date.now() } }),
 				messageAll(site._id, [
-					`The site, ${site.url}, might have changed!`,
+					`The site, ${site.url}, might have changed!\nUse /start to review commands`,
 					...ads
 						? [
 							'Support me here :\nhttp://m.p-y.tm/requestPayment?recipient=8669091448',
@@ -115,17 +129,11 @@ const checkSite = site =>
 						]
 						: []
 				].join('\n\n'))
-			]))
-		.catch(err =>
-			Promise.all([
-				site.updateOne({ $set: { checked: Date.now() } }),
-				messageAll(site._id, `The site, ${site.url}, is down!` +
-					(debug ? ' (' + err.message + ')' : ''))
-			]));
+			])})
 
 const batchWatch = async () => {
 	const allSites = await Site.find({
-		checked: { $lte: Date.now() - (maxAge * 1000) }
+		checked: { $lte: Date.now() - (updateInterval * 1000) }
 	})
 	for  (const site of allSites) {
 		 checkSite(site);
@@ -133,15 +141,13 @@ const batchWatch = async () => {
 };
 
 const bot = new Telegraf(token);
-
+bot.use(rateLimit(limitConfig))
 bot.command('start', ctx => ctx.reply(`Welcome to SiteSeer !
 Made by www.linkedin.com/in/akash-s-joshi 👻. 
 
-/list to list websites
+/list to list websites being checked for you
 /watch {sitename} to watch a site, without {}
 /unsub {sitename} to unsubscribe from the site, without {}
-
-Note : Doesn't work for dynamic sites like Instagram or Facebook.
 
 Your chatid is ${ctx.chat.id}`));
 
@@ -164,12 +170,13 @@ bot.command('watch', ({ chat: { id }, message: { text }, reply }) => {
 })
 
 bot.command('list', ({ chat: { id }, reply }) =>
-	ensureChatExists(id).populate('sites')
+	{ensureChatExists(id).populate('sites')
 		.then(({ sites }) =>
-			reply('Sites currently being checked by bot are \n' +
+			reply('Sites currently being checked for you are \n' +
 				sites.map(x => x.url).join('\n\n') +
-				'\n\nUse /watch sitename " to subscribe to notifs of that site' +
-				'\n\nUse /unsub sitename to unsubscribe')));
+				'\n\nUse /watch sitename to subscribe to notifs of a site' +
+				'\n\nUse /unsub sitename to unsubscribe'))
+			}) 
 
 bot.command('unsub', ({ chat: { id }, message: { text }, reply }) => {
 	const url = urlFromMessage(text);
@@ -185,11 +192,10 @@ bot.command('unsub', ({ chat: { id }, message: { text }, reply }) => {
 			reply(
 				res
 					? `If you were subscribed to ${url}, you no longer are`
-					: `"${url}" isn't a valid site. Please check /list for available websites`));
+					: `"${url}" isn't a valid site. Please check /list for websites being checked for you`));
 });
 
-batchWatch();
-
+batchWatch()
 setInterval(() => {
 	batchWatch();
 }, updateInterval * 1000);

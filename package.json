@@ -10,9 +10,12 @@
     "jsdom": "^13.1.0",
     "jssoup": "0.0.10",
     "mongoose": "^5.4.1",
-    "telegraf": "^3.25.5"
+    "telegraf": "^3.25.5",
+    "telegraf-ratelimit": "^2.0.0"
   },
   "engines": {
     "node": ">=10.15.0"
-  }
+  },
+  "repository":"http://github.com/akash-joshi/SiteSeer",
+  "license": "copyright"
 }
