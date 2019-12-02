@@ -9,7 +9,7 @@
     "express": "^4.16.4",
     "jsdom": "^13.1.0",
     "jssoup": "0.0.10",
-    "mongoose": "^5.4.1",
+    "mongoose": "^5.7.5",
     "telegraf": "^3.25.5",
     "telegraf-ratelimit": "^2.0.0"
   },
