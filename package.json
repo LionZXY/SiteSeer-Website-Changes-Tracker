@@ -4,7 +4,7 @@
   "version": "1.0.0",
   "description": "Get Telegram notifications based on site changes",
   "dependencies": {
-    "axios": "^0.18.0",
+    "axios": "^0.18.1",
     "dotenv": "^6.2.0",
     "express": "^4.16.4",
     "jsdom": "^13.1.0",
