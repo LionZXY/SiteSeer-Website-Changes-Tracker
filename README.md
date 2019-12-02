@@ -31,9 +31,23 @@ My bot to track changes in websites. Deployed at t.me/siteseer_bot .
 2. The site change checker, which converts the HTML of the site to a checksum and compares with prev checksum.
 3. A cronjob which runs the site change function every 15 minutes.
 
+## Getting Started
+
+### 1. Pre-requisites :
+
+1. Have a Mongo Database hosted locally or online.
+2. Have node & npm installed, check `npm -v` to check your version.
+3. Create a `.env` file containing based on this guide : [Link](https://github.com/akash-joshi/SiteSeer-Website-Tracker/blob/master/ENV.md)
+
+### 2. Running the code :
+
+1. Clone this repository.
+2. `cd` into it and run `npm i`.
+3. Run `npm start` to start the server.
+
 ## Tasklist
 
 - [ ] Compare a screenshot of the website instead of complete HTML
-- [ ] Use JSSoup instead ?
+- [X] Use JSSoup instead ?
 - [ ] Send image with change notification, so user doesn't have to open site
 - [ ] Split code into multiple files, abstract mongo, telegram
