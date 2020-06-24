@@ -1,6 +1,8 @@
 # SiteSeer
 
-My bot to track changes in websites. Deployed at t.me/siteseer_bot .
+My bot to track changes in websites. Was deployed at t.me/siteseer_bot previously, no longer hosted online. 
+
+Coming from LinkedIn? Do check out the documentation below.
 
 ## Usecases
 
@@ -51,3 +53,10 @@ My bot to track changes in websites. Deployed at t.me/siteseer_bot .
 - [X] Use JSSoup instead ?
 - [ ] Send image with change notification, so user doesn't have to open site
 - [ ] Split code into multiple files, abstract mongo, telegram
+
+## Challenges
+
+1. Web Dev Certificate Challenge - Create a beautiful frontend for the project to access functionality from the web.
+2. NLP Certificate Challenge - Optimize the chatbot to understand multitudes of user input.
+3. "Advanced" Programming Certificate Challenge - Optimize the code. Make it do more with less.
+4. Machine Learning/AI/Image Recognition Certificate Challenge - Optimize the bot to check for changes based on image recognition.
