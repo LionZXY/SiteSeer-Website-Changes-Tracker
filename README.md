@@ -35,17 +35,24 @@ Coming from LinkedIn? Do check out the documentation below.
 
 ## Getting Started
 
-### 1. Pre-requisites :
+### Manual
+#### 1. Pre-requisites :
 
 1. Have a Mongo Database hosted locally or online.
 2. Have node & npm installed, check `npm -v` to check your version.
 3. Create a `.env` file containing based on this guide : [Link](https://github.com/akash-joshi/SiteSeer-Website-Tracker/blob/master/ENV.md)
 
-### 2. Running the code :
+#### 2. Running the code :
 
 1. Clone this repository.
 2. `cd` into it and run `npm i`.
 3. Run `npm start` to start the server.
+
+### Docker
+
+1. Install docker-compose 
+2. Create a `.env` file containing based on this guide : [Link](https://github.com/akash-joshi/SiteSeer-Website-Tracker/blob/master/ENV.md)
+3. Run `docker-compose up`
 
 ## Tasklist
 
